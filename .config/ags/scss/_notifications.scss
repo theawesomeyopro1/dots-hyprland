@@ -49,6 +49,8 @@
     }
 
     border: 0.034rem solid $outlineVariant;
+    border-radius: 10px;
+    border-color: #00ccff;
     color: $onLayer2;
     padding: $rounding_small;
     padding-right: $rounding_small + 0.545rem;
@@ -64,6 +66,8 @@
     }
 
     border: 0.034rem solid $outlineVariant;
+    border-radius: 10px;
+    border-color: #00ccff;
     color: $onLayer2;
     padding: $rounding_small;
     padding-right: $rounding_small + 0.545rem;
@@ -74,6 +78,8 @@
     min-width: 30.682rem;
     background-color: $secondaryContainer;
     border: 0.034rem solid $onSecondaryContainer;
+    border-radius: 10px;
+    border-color: #00ccff;
     color: $onSecondaryContainer;
     padding: $rounding_small;
     padding-right: $rounding_small + 0.545rem;
