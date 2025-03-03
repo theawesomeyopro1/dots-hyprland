@@ -9,6 +9,7 @@ $sidebar_chat_textboxareaColor: mix($onSurfaceVariant, $surfaceVariant, 40%);
     @include elevation-border;
     @include elevation2;
     border-radius: $rounding_large - $elevation_margin + 0.068rem;
+    border-color: aqua;
     min-width: 27.818rem;
     background-color: $background;
     padding: 1.023rem;
@@ -19,6 +20,7 @@ $sidebar_chat_textboxareaColor: mix($onSurfaceVariant, $surfaceVariant, 40%);
     @include elevation-border;
     @include elevation2;
     border-radius: $rounding_large - $elevation_margin + 0.068rem;
+    border-color: aqua;
     min-width: 27.818rem;
     background-color: $background;
     padding: 1.023rem;
@@ -974,6 +976,11 @@ $waifu_image_overlay_transparency: 0.7;
     background-color: $layer1;
     color: $onLayer1;
     padding: 0.682rem;
+}
+
+.sidebar-wifinetworks-bandwidth {
+    min-width: 6.3rem;
+    padding-left: 1rem;
 }
 
 .sidebar-centermodules-bottombar-button {
