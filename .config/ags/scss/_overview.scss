@@ -1,3 +1,8 @@
+// Define the border variable
+$overview-border-size: 0.068rem;
+$overview-border-color: #00ccff; // Cyan
+$overview-border: $overview-border-size solid $overview-border-color;
+
 .overview-window {
     margin-top: 2.727rem;
 }
@@ -13,6 +18,7 @@
     padding-right: 2.864rem;
     background-color: $background;
     color: $onBackground;
+    border: $overview-border;
 
     selection {
         background-color: $secondary;
@@ -25,6 +31,11 @@
 .overview-search-box-extended {
     min-width: 25.909rem;
     caret-color: $onSecondaryContainer;
+    border: $overview-border;
+}
+
+.overview-search-result-btn:hover {
+    border: 2px solid cyan;
 }
 
 .overview-search-prompt {
@@ -46,8 +57,6 @@
 }
 
 .overview-search-results {
-    // min-height: 2.813rem;
-    // min-height: 37.5rem;
     @include large-rounding;
     @include elevation-border;
     @include elevation2;
@@ -55,6 +64,7 @@
     padding: 0.682rem;
     background-color: $layer0;
     color: $onLayer0;
+    border: $overview-border;
 }
 
 .overview-search-results-icon {
@@ -79,7 +89,6 @@
     padding: 0.341rem;
     min-width: 2.386rem;
     min-height: 2.386rem;
-
     caret-color: transparent;
 }
 
@@ -103,9 +112,9 @@
 
 .overview-tasks-workspace {
     @include normal-rounding;
-    // @include elevation-border;
     margin: 0.341rem;
     background-color: $layer1;
+    border: $overview-border;
 }
 
 .overview-tasks-workspace-number {
@@ -118,7 +127,6 @@
     @include menu_decel;
     background-color: transparentize($layer3, 0.2);
     color: $onSurface;
-    border: 0.068rem solid $surfaceContainerHighest;
 }
 
 .overview-tasks-window:hover,
