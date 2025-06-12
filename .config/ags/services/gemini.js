@@ -44,7 +44,7 @@ function replaceapidom(URL) {
     }
     return URL;
 }
-const CHAT_MODELS = ["gemini-1.5-flash"]
+const CHAT_MODELS = ["gemini-2.0-flash"]
 const ONE_CYCLE_COUNT = 3;
 
 class GeminiMessage extends Service {
@@ -62,6 +62,7 @@ class GeminiMessage extends Service {
 
     _role = '';
     _parts = [{ text: '' }];
+    _lastContentLength = 0;
     _thinking;
     _done = false;
     _rawData = '';
@@ -88,8 +89,11 @@ class GeminiMessage extends Service {
     }
     set content(content) {
         this._parts = [{ text: content }];
-        this.notify('content')
-        this.emit('changed')
+        if (content.length - this._lastContentLength >= userOptions.ai.charsEachUpdate) {
+            this.notify('content')
+            this.emit('changed')
+            this._lastContentLength = content.length;
+        }
     }
 
     get parts() { return this._parts }
@@ -188,7 +192,7 @@ class GeminiService extends Service {
 
     get useHistory() { return this._usingHistory; }
     set useHistory(value) {
-        if (value && !this._usingHistory) this.loadHistory();
+        // if (value && !this._usingHistory) this.loadHistory();
         this._usingHistory = value;
     }
 
@@ -280,7 +284,7 @@ class GeminiService extends Service {
     send(msg) {
         this._messages.push(new GeminiMessage('user', msg, false));
         this.emit('newMsg', this._messages.length - 1);
-        const aiResponse = new GeminiMessage('model', 'thinking...', true, false)
+        const aiResponse = new GeminiMessage('model', '', true, false)
 
         const body =
         {
@@ -295,14 +299,17 @@ class GeminiService extends Service {
             "generationConfig": {
                 "temperature": this._temperature,
             },
-            // "key": this._key,
-            // "apiKey": this._key,
+            "tools": [
+                {
+                    "google_search": {}
+                }
+            ]
         };
         const proxyResolver = new Gio.SimpleProxyResolver({ 'default-proxy': userOptions.ai.proxyUrl });
         const session = new Soup.Session({ 'proxy-resolver': proxyResolver });
         const message = new Soup.Message({
             method: 'POST',
-            uri: GLib.Uri.parse(replaceapidom(`https://generativelanguage.googleapis.com/v1/models/${this.modelName}:streamGenerateContent?key=${this._key}`), GLib.UriFlags.NONE),
+            uri: GLib.Uri.parse(replaceapidom(`https://generativelanguage.googleapis.com/v1beta/models/${this.modelName}:streamGenerateContent?key=${this._key}`), GLib.UriFlags.NONE),
         });
         message.request_headers.append('Content-Type', `application/json`);
         message.set_request_body_from_bytes('application/json', new GLib.Bytes(JSON.stringify(body)));

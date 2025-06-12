@@ -127,7 +127,7 @@ const ColorSchemeSettings = () => Widget.Box({
                         darkMode.value = !!newValue;
                     },
                     extraSetup: (self) => self.hook(darkMode, (self) => {
-                        self.enabled.value = darkMode.value;
+                        self.attribute.enabled.value = darkMode.value;
                     }),
                 }),
                 ConfigToggle({
@@ -141,34 +141,6 @@ const ColorSchemeSettings = () => Widget.Box({
                             .then(execAsync(['bash', '-c', `${App.configDir}/scripts/color_generation/switchcolor.sh`]))
                             .catch(print);
                     },
-                }),
-                Widget.Box({
-                    tooltipText: getString('Theme GTK apps using accent color\n(drawback: dark/light mode switching requires restart)'),
-                    className: 'txt spacing-h-5 configtoggle-box',
-                    children: [
-                        MaterialIcon('imagesearch_roller', 'norm'),
-                        Widget.Label({
-                            className: 'txt txt-small',
-                            label: getString('Use Gradience'),
-                        }),
-                        Widget.Box({ hexpand: true }),
-                        ConfigMulipleSelection({
-                            hpack: 'center',
-                            vpack: 'center',
-                            optionsArr: [
-                                [{ name: 'Off', value: 0 }, { name: 'On', value: 1 }],
-                            ],
-                            initIndex: [-1, -1],
-                            onChange: (value, name) => {
-                                const ADWAITA_BLUE = "#3584E4";
-                                if (value) execAsync([`bash`, `-c`, `${App.configDir}/scripts/color_generation/switchcolor.sh - --yes-gradience`, `&`])
-                                    .catch(print);
-                                else execAsync([`bash`, `-c`, `${App.configDir}/scripts/color_generation/switchcolor.sh "${ADWAITA_BLUE}" --no-gradience`, `&`])
-                                    .catch(print);
-
-                            },
-                        }),
-                    ]
                 }),
             ]
         }),

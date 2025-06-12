@@ -10,6 +10,7 @@ import { fileExists } from '../.miscutils/files.js';
 import { AnimatedCircProg } from "../.commonwidgets/cairo_circularprogress.js";
 import { showMusicControls } from '../../variables.js';
 import { darkMode, hasPlasmaIntegration } from '../.miscutils/system.js';
+import { setupCursorHover } from '../.widgetutils/cursorhover.js';
 
 const COMPILED_STYLE_DIR = `${GLib.get_user_cache_dir()}/ags/user/generated`
 const LIGHTDARK_FILE_LOCATION = `${GLib.get_user_state_dir()}/ags/user/colormode.txt`;
@@ -21,8 +22,8 @@ var lastCoverPath = '';
 function isRealPlayer(player) {
     return (
         // Remove unecessary native buses from browsers if there's plasma integration
-        !(hasPlasmaIntegration && player.busName.startsWith('org.mpris.MediaPlayer2.firefox')) &&
-        !(hasPlasmaIntegration && player.busName.startsWith('org.mpris.MediaPlayer2.chromium')) &&
+        // !(hasPlasmaIntegration && player.busName.startsWith('org.mpris.MediaPlayer2.firefox')) &&
+        // !(hasPlasmaIntegration && player.busName.startsWith('org.mpris.MediaPlayer2.chromium')) &&
         // playerctld just copies other buses and we don't need duplicates
         !player.busName.startsWith('org.mpris.MediaPlayer2.playerctld') &&
         // Non-instance mpd bus
@@ -208,8 +209,14 @@ const CoverArt = ({ player, ...rest }) => {
                 execAsync(['bash', '-c',
                     `${App.configDir}/scripts/color_generation/generate_colors_material.py --path '${coverPath}' --mode ${darkMode.value ? 'dark' : 'light'} > ${GLib.get_user_state_dir()}/ags/scss/_musicmaterial.scss`])
                     .then(() => {
-                        exec(`${App.configDir}/scripts/color_generation/pywal.sh -i "${player.coverPath}" -n -t -s -e -q ${darkMode.value ? '' : '-l'}`)
-                        exec(`cp ${GLib.get_user_cache_dir()}/wal/colors.scss ${GLib.get_user_state_dir()}/ags/scss/_musicwal.scss`);
+                        const dominantColor = `#${Utils.exec(`sh -c "magick '${coverPath}' -scale 1x1\\! -format '%[fx:int(255*r+.5)],%[fx:int(255*g+.5)],%[fx:int(255*b+.5)]' info: | sed 's/,/\\n/g' | xargs -L 1 printf '%02x' ; echo"`)}`
+                        // exec(`${App.configDir}/scripts/color_generation/pywal.sh -i "${player.coverPath}" -n -t -s -e -q ${darkMode.value ? '' : '-l'}`)
+                        // exec(`cp ${GLib.get_user_cache_dir()}/wal/colors.scss ${GLib.get_user_state_dir()}/ags/scss/_musicwal.scss`);
+                        exec(`cp '${App.configDir}/scripts/templates/wal/_musicwal.scss' '${GLib.get_user_state_dir()}/ags/scss/_musicwal.scss'`);
+                        exec(`sed -i 's/{{dominantColor}}/${dominantColor}/g' '${GLib.get_user_state_dir()}/ags/scss/_musicwal.scss'`)
+                        exec(`sed -i 's/{{backgroundColor}}/${darkMode.value ? "#0E1415" : "#EEF4F4"}/g' '${GLib.get_user_state_dir()}/ags/scss/_musicwal.scss'`)
+                        exec(`sed -i 's/{{foregroundColor}}/${darkMode.value ? "#EEF4F4" : "#0E1415"}/g' '${GLib.get_user_state_dir()}/ags/scss/_musicwal.scss'`)
+
                         exec(`sass -I "${GLib.get_user_state_dir()}/ags/scss" -I "${App.configDir}/scss/fallback" "${App.configDir}/scss/_music.scss" "${stylePath}"`);
                         Utils.timeout(200, () => {
                             // self.attribute.showImage(self, coverPath)
@@ -253,7 +260,8 @@ const TrackControls = ({ player, ...rest }) => Widget.Revealer({
                 child: Label({
                     className: 'icon-material osd-music-controlbtn-txt',
                     label: 'skip_previous',
-                })
+                }),
+                setup: setupCursorHover
             }),
             Button({
                 className: 'osd-music-controlbtn',
@@ -261,7 +269,8 @@ const TrackControls = ({ player, ...rest }) => Widget.Revealer({
                 child: Label({
                     className: 'icon-material osd-music-controlbtn-txt',
                     label: 'skip_next',
-                })
+                }),
+                setup: setupCursorHover
             }),
         ],
     }),
@@ -355,10 +364,11 @@ const PlayState = ({ player }) => {
                             label.label = `${player.playBackStatus == 'Playing' ? 'pause' : 'play_arrow'}`;
                         }, 'notify::play-back-status'),
                     }),
+                    setup: setupCursorHover
                 }),
             ],
             passThrough: true,
-        })
+        }),
     });
 }
 

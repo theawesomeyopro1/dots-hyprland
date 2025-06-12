@@ -24,11 +24,6 @@ if [ ! -f $colormodefile ]; then
     echo "dark" > $colormodefile
     echo "opaque" >> $colormodefile
     echo "vibrant" >> $colormodefile
-elif [[ $(wc -l < $colormodefile) -ne 4 || $(wc -w < $colormodefile) -ne 4 ]]; then
-    echo "dark" > $colormodefile
-    echo "opaque" >> $colormodefile
-    echo "vibrant" >> $colormodefile
-    echo "yesgradience" >> $colormodefile
 else
     lightdark=$(sed -n '1p' $colormodefile)
     transparency=$(sed -n '2p' $colormodefile)
@@ -60,7 +55,7 @@ elif [ "$backend" = "material" ]; then
         smartflag='--smart'
     fi
     source $(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate
-    python color_generation/generate_colors_material.py --path "$(eval echo $1)" \
+    python color_generation/generate_colors_material.py --path "$(realpath "$1")" \
     --mode "$lightdark" --scheme "$materialscheme" --transparency "$transparency" \
     --termscheme $terminalscheme --blend_bg_fg \
     --cache "$STATE_DIR/user/color.txt" $smartflag \

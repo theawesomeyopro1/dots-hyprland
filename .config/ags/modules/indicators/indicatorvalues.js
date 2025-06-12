@@ -5,9 +5,10 @@ const { Box, Label, ProgressBar } = Widget;
 import { MarginRevealer } from '../.widgethacks/advancedrevealers.js';
 import Brightness from '../../services/brightness.js';
 import Indicator from '../../services/indicator.js';
+import { MaterialIcon } from '../.commonwidgets/materialicon.js';
 
 const OsdValue = ({
-    name, nameSetup = undefined, labelSetup, progressSetup,
+    name, icon, nameSetup = undefined, labelSetup, progressSetup, iconSetup,
     extraClassName = '', extraProgressClassName = '',
     ...rest
 }) => {
@@ -22,27 +23,33 @@ const OsdValue = ({
         setup: labelSetup,
     });
     return Box({ // Volume
-        vertical: true,
         hexpand: true,
-        className: `osd-bg osd-value ${extraClassName}`,
+        className: `osd-bg osd-value ${extraClassName} spacing-h-5`,
         attribute: {
             'disable': () => {
                 valueNumber.label = '󰖭';
             }
         },
         children: [
+            MaterialIcon(icon, 'hugeass', {vpack: 'center', setup: iconSetup}),
             Box({
-                vexpand: true,
+                vertical: true,
+                className: 'spacing-v-5',
+                vpack: 'center',
                 children: [
-                    valueName,
-                    valueNumber,
+                    Box({
+                        children: [
+                            valueName,
+                            valueNumber,
+                        ]
+                    }),
+                    ProgressBar({
+                        className: `osd-progress ${extraProgressClassName}`,
+                        hexpand: true,
+                        vertical: false,
+                        setup: progressSetup,
+                    })
                 ]
-            }),
-            ProgressBar({
-                className: `osd-progress ${extraProgressClassName}`,
-                hexpand: true,
-                vertical: false,
-                setup: progressSetup,
             })
         ],
         ...rest,
@@ -52,6 +59,7 @@ const OsdValue = ({
 export default (monitor = 0) => {
     const brightnessIndicator = OsdValue({
         name: 'Brightness',
+        icon: 'light_mode',
         extraClassName: 'osd-brightness',
         extraProgressClassName: 'osd-brightness-progress',
         labelSetup: (self) => self.hook(Brightness[monitor], self => {
@@ -84,7 +92,9 @@ export default (monitor = 0) => {
         }),
         labelSetup: (self) => self.hook(Audio, (label) => {
             const newDevice = (Audio.speaker?.name);
-            const updateValue = Math.round(Audio.speaker?.volume * 100);
+            const updateValue = Audio.speaker?.stream?.isMuted
+                ? 0
+                : Math.round(Audio.speaker?.volume * 100);
             if (!isNaN(updateValue)) {
                 if (newDevice === volumeIndicator.attribute.device && updateValue != label.label) {
                     Indicator.popup(1);
@@ -94,11 +104,19 @@ export default (monitor = 0) => {
             label.label = `${updateValue}`;
         }),
         progressSetup: (self) => self.hook(Audio, (progress) => {
-            const updateValue = Audio.speaker?.volume;
+            const updateValue = Audio.speaker?.stream?.isMuted
+                ? 0
+                : Audio.speaker?.volume;
             if (!isNaN(updateValue)) {
                 if (updateValue > 1) progress.value = 1;
                 else progress.value = updateValue;
             }
+        }),
+        iconSetup: (self) => self.hook(Audio, (progress) => {
+            self.label =
+                Audio.speaker?.stream?.isMuted || !Audio.speaker.volume
+                    ? 'volume_off'
+                    : 'volume_up';
         }),
     });
     return MarginRevealer({

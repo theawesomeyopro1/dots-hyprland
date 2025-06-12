@@ -48,20 +48,17 @@ get_light_dark() {
 }
 
 apply_fuzzel() {
-  # Check if scripts/templates/fuzzel/fuzzel.ini exists
-  if [ ! -f "scripts/templates/fuzzel/fuzzel.ini" ]; then
+  # Check if template exists
+  if [ ! -f "scripts/templates/fuzzel/fuzzel.theme" ]; then
     echo "Template file not found for Fuzzel. Skipping that."
     return
   fi
   # Copy template
-  mkdir -p "$CACHE_DIR"/user/generated/fuzzel
-  cp "scripts/templates/fuzzel/fuzzel.ini" "$CACHE_DIR"/user/generated/fuzzel/fuzzel.ini
+  cp "scripts/templates/fuzzel/fuzzel.theme" "$XDG_CONFIG_HOME"/fuzzel/fuzzel.theme
   # Apply colors
   for i in "${!colorlist[@]}"; do
-    sed -i "s/{{ ${colorlist[$i]} }}/${colorvalues[$i]#\#}/g" "$CACHE_DIR"/user/generated/fuzzel/fuzzel.ini
+    sed -i "s/{{ ${colorlist[$i]} }}/${colorvalues[$i]#\#}/g" "$XDG_CONFIG_HOME"/fuzzel/fuzzel.theme
   done
-
-  cp "$CACHE_DIR"/user/generated/fuzzel/fuzzel.ini "$XDG_CONFIG_HOME"/fuzzel/fuzzel.ini
 }
 
 apply_term() {
@@ -88,7 +85,7 @@ apply_term() {
 }
 
 apply_hyprland() {
-  # Check if scripts/templates/hypr/hyprland/colors.conf exists
+  # Check if template exists
   if [ ! -f "scripts/templates/hypr/hyprland/colors.conf" ]; then
     echo "Template file not found for Hyprland colors. Skipping that."
     return
@@ -105,7 +102,7 @@ apply_hyprland() {
 }
 
 apply_hyprlock() {
-  # Check if scripts/templates/hypr/hyprlock.conf exists
+  # Check if template exists
   if [ ! -f "scripts/templates/hypr/hyprlock.conf" ]; then
     echo "Template file not found for hyprlock. Skipping that."
     return
@@ -122,6 +119,26 @@ apply_hyprlock() {
   cp "$CACHE_DIR"/user/generated/hypr/hyprlock.conf "$XDG_CONFIG_HOME"/hypr/hyprlock.conf
 }
 
+apply_ags_sourceview() {
+  # Check if template file exists
+  if [ ! -f "scripts/templates/ags/sourceviewtheme.xml" ]; then
+    echo "Template file not found for ags sourceview. Skipping that."
+    return
+  fi
+  # Copy template
+  mkdir -p "$CACHE_DIR"/user/generated/ags
+  cp "scripts/templates/ags/sourceviewtheme.xml" "$CACHE_DIR"/user/generated/ags/sourceviewtheme.xml
+  cp "scripts/templates/ags/sourceviewtheme-light.xml" "$CACHE_DIR"/user/generated/ags/sourceviewtheme-light.xml
+  # Apply colors
+  for i in "${!colorlist[@]}"; do
+    sed -i "s/{{ ${colorlist[$i]} }}/#${colorvalues[$i]#\#}/g" "$CACHE_DIR"/user/generated/ags/sourceviewtheme.xml
+    sed -i "s/{{ ${colorlist[$i]} }}/#${colorvalues[$i]#\#}/g" "$CACHE_DIR"/user/generated/ags/sourceviewtheme-light.xml
+  done
+
+  cp "$CACHE_DIR"/user/generated/ags/sourceviewtheme.xml "$XDG_CONFIG_HOME"/ags/assets/themes/sourceviewtheme.xml
+  cp "$CACHE_DIR"/user/generated/ags/sourceviewtheme-light.xml "$XDG_CONFIG_HOME"/ags/assets/themes/sourceviewtheme-light.xml
+}
+
 apply_lightdark() {
   lightdark=$(get_light_dark)
   if [ "$lightdark" = "light" ]; then
@@ -131,30 +148,25 @@ apply_lightdark() {
   fi
 }
 
-apply_gtk() { # Using gradience-cli
-  usegradience=$(sed -n '4p' "$STATE_DIR/user/colormode.txt")
-  if [[ "$usegradience" = "nogradience" ]]; then
-    rm "$XDG_CONFIG_HOME/gtk-3.0/gtk.css"
-    rm "$XDG_CONFIG_HOME/gtk-4.0/gtk.css"
+apply_gtk() {
+  # Check if template exists
+  if [ ! -f "scripts/templates/gtk/gtk-colors.css" ]; then
+    echo "Template file not found for gtk colors. Skipping that."
     return
   fi
-
   # Copy template
-  mkdir -p "$CACHE_DIR"/user/generated/gradience
-  cp "scripts/templates/gradience/preset.json" "$CACHE_DIR"/user/generated/gradience/preset.json
-
+  mkdir -p "$CACHE_DIR"/user/generated/gtk/
+  cp "scripts/templates/gtk/gtk-colors.css" "$CACHE_DIR"/user/generated/gtk/gtk-colors.css
   # Apply colors
   for i in "${!colorlist[@]}"; do
-    sed -i "s/{{ ${colorlist[$i]} }}/${colorvalues[$i]}/g" "$CACHE_DIR"/user/generated/gradience/preset.json
+    sed -i "s/{{ ${colorlist[$i]} }}/#${colorvalues[$i]#\#}/g" "$CACHE_DIR"/user/generated/gtk/gtk-colors.css
   done
 
-  mkdir -p "$XDG_CONFIG_HOME/presets" # create gradience presets folder
-  source $(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate
-  gradience-cli apply -p "$CACHE_DIR"/user/generated/gradience/preset.json --gtk both
-  deactivate
+  # Apply to both gtk3 and gtk4
+  cp "$CACHE_DIR"/user/generated/gtk/gtk-colors.css "$XDG_CONFIG_HOME"/gtk-3.0/gtk.css
+  cp "$CACHE_DIR"/user/generated/gtk/gtk-colors.css "$XDG_CONFIG_HOME"/gtk-4.0/gtk.css
 
-  # And set GTK theme manually as Gradience defaults to light adw-gtk3
-  # (which is unreadable when broken when you use dark mode)
+  # And set the right variant of adw gtk3
   lightdark=$(get_light_dark)
   if [ "$lightdark" = "light" ]; then
     gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'
@@ -180,6 +192,7 @@ colorlist=($colornames)     # Array of color names
 colorvalues=($colorstrings) # Array of color values
 
 apply_ags &
+apply_ags_sourceview &
 apply_hyprland &
 apply_hyprlock &
 apply_lightdark &

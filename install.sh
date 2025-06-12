@@ -94,14 +94,14 @@ install-local-pkgbuild() {
 
 	source ./PKGBUILD
 	x yay -S $installflags --asdeps "${depends[@]}"
-	x makepkg -si --noconfirm
+	x makepkg -Asi --noconfirm
 
 	x popd
 }
 
 # Install core dependencies from the meta-packages
 metapkgs=(./arch-packages/illogical-impulse-{audio,python,backlight,basic,fonts-themes,gnome,gtk,portal,screencapture,widgets})
-metapkgs+=(./arch-packages/illogical-impulse-agsv1)
+metapkgs+=(./arch-packages/illogical-impulse-agsv1-git)
 metapkgs+=(./arch-packages/illogical-impulse-hyprland)
 metapkgs+=(./arch-packages/illogical-impulse-microtex-git)
 metapkgs+=(./arch-packages/illogical-impulse-oneui4-icons-git)
@@ -119,24 +119,24 @@ showfun install-python-packages
 v install-python-packages
 
 ## Optional dependencies
-if pacman -Qs ^plasma-browser-integration$ ;then SKIP_PLASMAINTG=true;fi
-case $SKIP_PLASMAINTG in
-  true) sleep 0;;
-  *)
-    if $ask;then
-      echo -e "\e[33m[$0]: NOTE: The size of \"plasma-browser-integration\" is about 250 MiB.\e[0m"
-      echo -e "\e[33mIt is needed if you want playtime of media in Firefox to be shown on the music controls widget.\e[0m"
-      echo -e "\e[33mInstall it? [y/N]\e[0m"
-      read -p "====> " p
-    else
-      p=y
-    fi
-    case $p in
-      y) x sudo pacman -S --needed --noconfirm plasma-browser-integration ;;
-      *) echo "Ok, won't install"
-    esac
-    ;;
-esac
+# if pacman -Qs ^plasma-browser-integration$ ;then SKIP_PLASMAINTG=true;fi
+# case $SKIP_PLASMAINTG in
+#   true) sleep 0;;
+#   *)
+#     if $ask;then
+#       echo -e "\e[33m[$0]: NOTE: The size of \"plasma-browser-integration\" is about 250 MiB.\e[0m"
+#       echo -e "\e[33mIt is needed if you want playtime of media in Firefox to be shown on the music controls widget.\e[0m"
+#       echo -e "\e[33mInstall it? [y/N]\e[0m"
+#       read -p "====> " p
+#     else
+#       p=y
+#     fi
+#     case $p in
+#       y) x sudo pacman -S --needed --noconfirm plasma-browser-integration ;;
+#       *) echo "Ok, won't install"
+#     esac
+#     ;;
+# esac
 
 v sudo usermod -aG video,i2c,input "$(whoami)"
 v bash -c "echo i2c-dev | sudo tee /etc/modules-load.d/i2c-dev.conf"
@@ -181,15 +181,15 @@ esac
 case $SKIP_AGS in
   true) sleep 0;;
   *)
-    v rsync -av --delete --exclude '/user_options.js' .config/ags/ "$XDG_CONFIG_HOME"/ags/
-    t="$XDG_CONFIG_HOME/ags/user_options.js"
+    v rsync -av --delete --exclude '/user_options.jsonc' .config/ags/ "$XDG_CONFIG_HOME"/ags/
+    t="$XDG_CONFIG_HOME/ags/user_options.jsonc"
     if [ -f $t ];then
       echo -e "\e[34m[$0]: \"$t\" already exists.\e[0m"
-      # v cp -f .config/ags/user_options.js $t.new
+      # v cp -f .config/ags/user_options.jsonc $t.new
       existed_ags_opt=y
     else
       echo -e "\e[33m[$0]: \"$t\" does not exist yet.\e[0m"
-      v cp .config/ags/user_options.js $t
+      v cp .config/ags/user_options.jsonc $t
       existed_ags_opt=n
     fi
     ;;
@@ -201,10 +201,17 @@ case $SKIP_HYPRLAND in
   *)
     v rsync -av --delete --exclude '/custom' --exclude '/hyprlock.conf' --exclude '/hypridle.conf' --exclude '/hyprland.conf' .config/hypr/ "$XDG_CONFIG_HOME"/hypr/
     t="$XDG_CONFIG_HOME/hypr/hyprland.conf"
-    if [ -f $t_0 ];then
+    if [ -f $t ];then
       echo -e "\e[34m[$0]: \"$t\" already exists.\e[0m"
-      v cp -f .config/hypr/hyprland.conf $t.new
-      existed_hypr_conf=y
+      if [ -f "$XDG_STATE_HOME/ags/user/firstrun.txt" ]
+      then
+        v cp -f .config/hypr/hyprland.conf $t.new
+        existed_hypr_conf=y
+      else
+        v mv $t $t.old
+        v cp -f .config/hypr/hyprland.conf $t
+        existed_hypr_conf_firstrun=y
+      fi
     else
       echo -e "\e[33m[$0]: \"$t\" does not exist yet.\e[0m"
       v cp .config/hypr/hyprland.conf $t
@@ -284,13 +291,16 @@ printf "\e[36mPress \e[30m\e[46m Super+/ \e[0m\e[36m for a list of keybinds\e[0m
 printf "\n"
 
 case $existed_ags_opt in
-  y) printf "\n\e[33m[$0]: Warning: \"$XDG_CONFIG_HOME/ags/user_options.js\" already existed before and we didn't overwrite it. \e[0m\n"
-#    printf "\e[33mPlease use \"$XDG_CONFIG_HOME/ags/user_options.js.new\" as a reference for a proper format.\e[0m\n"
+  y) printf "\n\e[33m[$0]: Warning: \"$XDG_CONFIG_HOME/ags/user_options.jsonc\" already existed before and we didn't overwrite it. \e[0m\n"
+#    printf "\e[33mPlease use \"$XDG_CONFIG_HOME/ags/user_options.jsonc.new\" as a reference for a proper format.\e[0m\n"
+;;esac
+case $existed_hypr_conf_firstrun in
+  y) printf "\n\e[33m[$0]: Warning: \"$XDG_CONFIG_HOME/hypr/hyprland.conf\" already existed before. As it seems it is your first run, we replaced it with a new one. \e[0m\n"
+     printf "\e[33mAs it seems it is your first run, we replaced it with a new one. The old one has been renamed to \"$XDG_CONFIG_HOME/hypr/hyprland.conf.old\".\e[0m\n"
 ;;esac
 case $existed_hypr_conf in
   y) printf "\n\e[33m[$0]: Warning: \"$XDG_CONFIG_HOME/hypr/hyprland.conf\" already existed before and we didn't overwrite it. \e[0m\n"
      printf "\e[33mPlease use \"$XDG_CONFIG_HOME/hypr/hyprland.conf.new\" as a reference for a proper format.\e[0m\n"
-     printf "\e[33mIf this is your first time installation, you must overwrite \"$XDG_CONFIG_HOME/hypr/hyprland.conf\" with \"$XDG_CONFIG_HOME/hypr/hyprland.conf.new\".\e[0m\n"
 ;;esac
 case $existed_hypridle_conf in
   y) printf "\n\e[33m[$0]: Warning: \"$XDG_CONFIG_HOME/hypr/hypridle.conf\" already existed before and we didn't overwrite it. \e[0m\n"

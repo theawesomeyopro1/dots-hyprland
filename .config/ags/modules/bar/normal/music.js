@@ -2,7 +2,7 @@ const { GLib } = imports.gi;
 import Widget from 'resource:///com/github/Aylur/ags/widget.js';
 import * as Utils from 'resource:///com/github/Aylur/ags/utils.js';
 import Mpris from 'resource:///com/github/Aylur/ags/service/mpris.js';
-const { Box, Button, EventBox, Label, Overlay, Revealer, Scrollable } = Widget;
+const { Box, Button, EventBox, Label, Overlay, Revealer } = Widget;
 const { execAsync, exec } = Utils;
 import { AnimatedCircProg } from "../../.commonwidgets/cairo_circularprogress.js";
 import { MaterialIcon } from '../../.commonwidgets/materialicon.js';
@@ -37,13 +37,13 @@ const BarGroup = ({ child }) => Box({
     className: 'bar-group-margin bar-sides',
     children: [
         Box({
-            className: 'bar-group bar-group-standalone bar-group-pad-system',
+            className: `bar-group${userOptions.appearance.borderless ? '-borderless' : ''} bar-group-standalone bar-group-pad-system`,
             children: [child],
         }),
     ]
 });
 
-const BarResource = (name, icon, command, circprogClassName = 'bar-batt-circprog', textClassName = 'txt-onSurfaceVariant', iconClassName = 'bar-batt') => {
+const BarResource = (name, icon, command, circprogClassName = `bar-batt-circprog ${userOptions.appearance.borderless ? 'bar-batt-circprog-borderless' : ''}`, textClassName = 'txt-onSurfaceVariant', iconClassName = 'bar-batt') => {
     const resourceCircProg = AnimatedCircProg({
         className: `${circprogClassName}`,
         vpack: 'center',
@@ -89,12 +89,13 @@ const BarResource = (name, icon, command, circprogClassName = 'bar-batt-circprog
 const TrackProgress = () => {
     const _updateProgress = (circprog) => {
         const mpris = Mpris.getPlayer('');
-        if (!mpris) return;
-        // Set circular progress value
-        circprog.css = `font-size: ${Math.max(mpris.position / mpris.length * 100, 0)}px;`
+        if (!mpris)
+            circprog.css = `font-size: ${userOptions.appearance.borderless ? 100 : 0}px;`
+        else // Set circular progress value
+            circprog.css = `font-size: ${Math.max(mpris.position / mpris.length * 100, 0)}px;`
     }
     return AnimatedCircProg({
-        className: 'bar-music-circprog',
+        className: `bar-music-circprog ${userOptions.appearance.borderless ? 'bar-music-circprog-borderless' : ''}`,
         vpack: 'center', hpack: 'center',
         extraSetup: (self) => self
             .hook(Mpris, _updateProgress)
@@ -135,8 +136,8 @@ export default () => {
                 setup: (self) => self.hook(Mpris, label => {
                     const mpris = Mpris.getPlayer('');
                     if (!mpris) return;
-                    label.toggleClassName('bar-music-playstate-playing', mpris !== null && mpris.playBackStatus == 'Playing');
-                    label.toggleClassName('bar-music-playstate', mpris !== null || mpris.playBackStatus == 'Paused');
+                    label.toggleClassName('bar-music-playstate-playing', mpris.playBackStatus == 'Playing');
+                    label.toggleClassName('bar-music-playstate', mpris.playBackStatus == 'Paused');
                 }),
             }),
             overlays: [
@@ -193,7 +194,7 @@ export default () => {
             child: Box({
                 children: [
                     BarResource(getString('RAM Usage'), 'memory', `LANG=C free | awk '/^Mem/ {printf("%.2f\\n", ($3/$2) * 100)}'`,
-                        'bar-ram-circprog', 'bar-ram-txt', 'bar-ram-icon'),
+                        `bar-ram-circprog ${userOptions.appearance.borderless ? 'bar-ram-circprog-borderless' : ''}`, 'bar-ram-txt', 'bar-ram-icon'),
                     Revealer({
                         revealChild: true,
                         transition: 'slide_left',
@@ -202,14 +203,14 @@ export default () => {
                             className: 'spacing-h-10 margin-left-10',
                             children: [
                                 BarResource(getString('Swap Usage'), 'swap_horiz', `LANG=C free | awk '/^Swap/ {if ($2 > 0) printf("%.2f\\n", ($3/$2) * 100); else print "0";}'`,
-                                    'bar-swap-circprog', 'bar-swap-txt', 'bar-swap-icon'),
+                                    `bar-swap-circprog ${userOptions.appearance.borderless ? 'bar-swap-circprog-borderless' : ''}`, 'bar-swap-txt', 'bar-swap-icon'),
                                 BarResource(getString('CPU Usage'), 'settings_motion_mode', `LANG=C top -bn1 | grep Cpu | sed 's/\\,/\\./g' | awk '{print $2}'`,
-                                    'bar-cpu-circprog', 'bar-cpu-txt', 'bar-cpu-icon'),
+                                    `bar-cpu-circprog ${userOptions.appearance.borderless ? 'bar-cpu-circprog-borderless' : ''}`, 'bar-cpu-txt', 'bar-cpu-icon'),
                             ]
                         }),
                         setup: (self) => self.hook(Mpris, label => {
                             const mpris = Mpris.getPlayer('');
-                            self.revealChild = (!mpris);
+                            self.revealChild = (!mpris || mpris.playBackStatus !== 'Playing' || userOptions.bar.alwaysShowFullResources);
                         }),
                     })
                 ],
