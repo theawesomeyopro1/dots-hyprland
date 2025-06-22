@@ -18,7 +18,9 @@ if test -f ~/.cache/ags/user/generated/terminal/sequences.txt
 end
 
 alias pamcan=pacman
-
+# if you want emulator then uncomment line under this
+# alias emu='QT_QPA_PLATFORM=xcb ~/Android/Sdk/emulator/emulator -avd Pixel -no-snapshot-load -no-snapshot-save -no-skin'
+alias agslog='cat /home/$USER/.cache/ags/user/generated/style.css'
 # function fish_prompt
 #   set_color cyan; echo (pwd)
 #   set_color green; echo '> '
